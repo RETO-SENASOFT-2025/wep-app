@@ -1,14 +1,34 @@
-python -m venv .venv
-.venv\Scripts\Activate
+# SuperApp
 
-<!-- Una vez -->
+Aplicación FastAPI optimizada para ejecutarse con Docker.
 
-pip install --upgrade pip wheel setuptools cryptography
-pip install -r requirements.txt --upgrade
+## Requisitos
 
-<!-- Varias veces -->
+- Docker
+- Docker Compose
 
-python -m ruff check .
-python -m ruff format .
+## Ejecución con Docker
 
--> deactivate
+Para ejecutar la aplicación en entorno de desarrollo, simplemente ejecuta:
+
+```bash
+docker-compose up
+```
+
+La aplicación estará disponible en: http://localhost:8000
+
+Para ejecutar en segundo plano:
+
+```bash
+docker-compose up -d
+```
+
+Para detener la aplicación:
+
+```bash
+docker-compose down
+```
+
+## Reconstrucción de la imagen
+
+La imagen Docker está configurada para reconstruirse automáticamente solo cuando cambian los paquetes en requirements.txt, optimizando así el tiempo de desarrollo.
