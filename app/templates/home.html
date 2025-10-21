@@ -1,13 +1,21 @@
-<!DOCTYPE html>
-<html lang="es-CO">
-</html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-    <h1 class="text-3xl font-bold underline">Welcome to the Home Page</h1>
-</body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+    <section class="grid gap-6">
+        <div class="rounded-2xl bg-white shadow-sm p-6">
+            <div class="flex items-center gap-3">
+                <img src="{{ request.url_for('static', path='favicon.webp') }}"
+                     alt="SuperApp"
+                     class="h-8 w-8 rounded" />
+                <h1 class="text-xl font-semibold">Bienvenido a SuperApp</h1>
+            </div>
+            <p class="mt-2 text-sm text-slate-600">Selecciona o crea una conversación desde la barra lateral. Todo se guarda localmente en tu navegador.</p>
+        </div>
+        <div class="rounded-2xl bg-white shadow-sm p-6">
+            <h2 class="text-lg font-semibold">Conversación activa</h2>
+            <p id="activeChatTitle" class="mt-1 text-sm text-slate-600">Sin conversación seleccionada</p>
+            <div class="mt-4 text-sm text-slate-500">
+                Esta es un área de contenido. Aquí podrías mostrar mensajes, prompts o cualquier interacción. Por ahora, es un placeholder.
+            </div>
+        </div>
+    </section>
+{% endblock %}

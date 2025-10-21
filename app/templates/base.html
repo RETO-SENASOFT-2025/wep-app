@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SuperApp</title>
+        <meta name="theme-color" content="#0b2250" />
+        <link rel="icon"
+              href="{{ request.url_for('static', path='favicon.webp') }}"
+              type="image/webp" />
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="min-h-screen bg-gray-50 text-slate-900">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 bg-[#0b2250] text-white">
+            <div class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
+                <button id="toggleSidebar"
+                        class="md:hidden inline-flex items-center justify-center rounded-md p-2 hover:bg-white/10"
+                        aria-label="Abrir menú">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <a href="/" class="flex items-center gap-2">
+                    <img src="{{ request.url_for('static', path='favicon.webp') }}"
+                         alt="SuperApp"
+                         class="h-6 w-6 rounded" />
+                    <span class="font-semibold tracking-wide">SuperApp</span>
+                </a>
+                <div class="ml-auto flex items-center gap-2">
+                    <span class="text-xs md:text-sm text-white/80">Innovador, simple y rápido</span>
+                </div>
+            </div>
+        </header>
+        <!-- Sidebar (drawer on mobile) -->
+        <aside id="sidebar"
+               class="fixed md:static inset-y-0 left-0 w-72 transform transition-transform duration-300 -translate-x-full md:translate-x-0 z-40 bg-[#0b2250] text-white shadow-xl">
+            <div class="h-full flex flex-col">
+                <div class="px-4 py-3 border-b border-white/10">
+                    <h2 class="text-sm font-semibold tracking-wide">Conversaciones</h2>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div class="flex gap-2">
+                        <input id="newChatTitle"
+                               type="text"
+                               placeholder="Nombre del chat"
+                               class="flex-1 rounded-md px-3 py-2 text-sm text-slate-900" />
+                        <button id="createChat"
+                                class="rounded-md px-3 py-2 text-sm font-medium bg-[#7FFFD4] text-[#0b2250] hover:bg-[#6FEFC4]">Crear</button>
+                    </div>
+                    <button id="newChatQuick"
+                            class="w-full rounded-md px-3 py-2 text-sm font-medium bg-white/10 hover:bg-white/20">Nueva conversación</button>
+                </div>
+                <nav class="flex-1 overflow-y-auto p-2">
+                    <ul id="chatList" class="space-y-1">
+                    </ul>
+                </nav>
+                <div class="px-4 py-3 border-t border-white/10 text-xs text-white/70">
+                    <button id="closeSidebar" class="md:hidden underline">Cerrar</button>
+                </div>
+            </div>
+        </aside>
+        <!-- Main content -->
+        <div class="md:ml-72">
+            <main class="mx-auto max-w-7xl p-4 md:p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        <!-- Overlay for mobile -->
+        <div id="overlay" class="fixed inset-0 bg-black/30 hidden md:hidden"></div>
+        <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const toggleSidebarBtn = document.getElementById('toggleSidebar');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
+    const newChatTitle = document.getElementById('newChatTitle');
+    const createChatBtn = document.getElementById('createChat');
+    const newChatQuickBtn = document.getElementById('newChatQuick');
+    const chatList = document.getElementById('chatList');
+
+    // Drawer behaviour
+    function openSidebar() {
+      sidebar.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+    }
+    function closeSidebar() {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    }
+    toggleSidebarBtn.addEventListener('click', openSidebar);
+    closeSidebarBtn.addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', closeSidebar);
+
+    // IndexedDB helpers
+    let db;
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('SuperAppDB', 1);
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('conversations')) {
+            const store = db.createObjectStore('conversations', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('title', 'title', { unique: false });
+            store.createIndex('updated_at', 'updated_at', { unique: false });
+          }
+        };
+        request.onsuccess = (event) => { db = event.target.result; resolve(db); };
+        request.onerror = (event) => reject(event.target.error);
+      });
+    }
+    function tx(storeName, mode = 'readonly') { return db.transaction(storeName, mode).objectStore(storeName); }
+    async function getAllConversations() {
+      return new Promise((resolve, reject) => {
+        const req = tx('conversations').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function addConversation(title) {
+      return new Promise((resolve, reject) => {
+        const now = new Date().toISOString();
+        const req = tx('conversations', 'readwrite').add({ title: title || 'Nueva conversación', created_at: now, updated_at: now });
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function deleteConversation(id) {
+      return new Promise((resolve, reject) => {
+        const req = tx('conversations', 'readwrite').delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function renderChats(chats) {
+      chatList.innerHTML = '';
+      chats.sort((a,b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+      for (const chat of chats) {
+        const li = document.createElement('li');
+        li.className = 'group flex items-center justify-between rounded-md px-3 py-2 bg-white/10 hover:bg-white/20';
+        li.innerHTML = `
+          <button data-id="${chat.id}" class="select-chat text-left flex-1">
+            <span class="block text-sm">${chat.title}</span>
+            <span class="block text-xs text-white/70">${new Date(chat.updated_at || chat.created_at).toLocaleString()}</span>
+          </button>
+          <button data-id="${chat.id}" class="delete-chat opacity-70 hover:opacity-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
+        `;
+        chatList.appendChild(li);
+      }
+      // Bind actions
+      chatList.querySelectorAll('.delete-chat').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = Number(e.currentTarget.getAttribute('data-id'));
+          await deleteConversation(id);
+          await refresh();
+        });
+      });
+      chatList.querySelectorAll('.select-chat').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = Number(e.currentTarget.getAttribute('data-id'));
+          localStorage.setItem('activeChatId', String(id));
+          const title = e.currentTarget.querySelector('span').textContent || 'Conversación';
+          const display = document.getElementById('activeChatTitle');
+          if (display) display.textContent = title;
+          closeSidebar();
+        });
+      });
+    }
+
+    async function refresh() {
+      const chats = await getAllConversations();
+      renderChats(chats);
+    }
+
+    // Bind UI actions
+    createChatBtn.addEventListener('click', async () => {
+      const title = newChatTitle.value.trim();
+      if (!title) return;
+      await addConversation(title);
+      newChatTitle.value = '';
+      await refresh();
+    });
+    newChatQuickBtn.addEventListener('click', async () => {
+      await addConversation('Nueva conversación');
+      await refresh();
+    });
+
+    // Init
+    (async () => { await openDB(); await refresh(); })();
+        </script>
+    </body>
+</html>
