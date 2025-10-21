@@ -18,3 +18,10 @@ quote-style = "double"
 indent-style = "tab"
 line-ending = "lf"
 docstring-code-format = true
+
+
+[tool.djlint]
+profile = "jinja"
+indent = 4
+max_line_length = 150
+use_gitignore = true
