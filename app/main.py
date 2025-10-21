@@ -1,23 +1,19 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 import os
 
 app = FastAPI(title="SuperApp", docs_url=None, redoc_url=None, openapi_url=None)
 
-# Montar archivos estáticos
-# app.mount("/static", StaticFiles(directory="static"), name="static")
+# Configurar templates (ruta absoluta para evitar problemas de cwd)
+templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
-# Configurar templates
-templates = Jinja2Templates(directory="templates")
 
-# Importar routers
-from app.routers import home
-
-# Incluir routers
-app.include_router(home.router)
+# Ruta raíz
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+	return templates.TemplateResponse("home.html", {"request": request})
 
 
 # Ruta de status simple de texto
