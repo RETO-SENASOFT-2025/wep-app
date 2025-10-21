@@ -1,34 +1,50 @@
 # SuperApp
 
-Aplicación FastAPI optimizada para ejecutarse con Docker.
+Aplicación FastAPI minimalista, contenerizada con Docker, orientada a simplicidad operacional y observabilidad.
 
-## Requisitos
+- `GET /` → HTML renderizado con `Jinja2Templates`.
+- `GET /status` → texto plano `on` para healthchecks.
 
-- Docker
-- Docker Compose
+## Resumen Ejecutivo
 
-## Ejecución con Docker
+- Arquitectura: `FastAPI` + `Uvicorn` escuchando en `:8000`.
+- Healthcheck: `GET /status` definido en `docker-compose.yml` para dev y prod.
+- Perfiles de ejecución:
+  - `dev`: autoreload y bind mount del código (`.:/app`).
+  - `prod`: sin autoreload, `UVICORN_WORKERS` configurable.
+- Variables clave: `ENVIRONMENT`, `UVICORN_WORKERS` (solo en producción).
 
-Para ejecutar la aplicación en entorno de desarrollo, simplemente ejecuta:
-
-```bash
-docker-compose up
-```
-
-La aplicación estará disponible en: http://localhost:8000
-
-Para ejecutar en segundo plano:
+## Arranque Rápido
 
 ```bash
-docker-compose up -d
+# Desarrollo (Compose)
+docker compose --profile dev up -d --build
+
+# Producción (Compose)
+docker compose --profile prod up -d --build
+
+# Comprobación
+curl http://localhost:8000/status   # devuelve: on
 ```
 
-Para detener la aplicación:
+## Guías Detalladas
 
-```bash
-docker-compose down
-```
+- Guía de Desarrollo: `README.dev.md`
+- Guía de Producción: `README.prod.md`
 
-## Reconstrucción de la imagen
+## Estructura del Proyecto
 
-La imagen Docker está configurada para reconstruirse automáticamente solo cuando cambian los paquetes en requirements.txt, optimizando así el tiempo de desarrollo.
+- `app/main.py` → definición de rutas `/` y `/status`.
+- `app/templates/home.html` → plantilla para `/`.
+- `docker-compose.yml` → servicios `app-dev` y `app-prod` con healthcheck.
+- `Dockerfile.dev` y `Dockerfile.prod` → imágenes por entorno.
+
+## Mantenimiento
+
+- Reconstrucción por cambios en dependencias:
+  - Dev: `docker compose --profile dev build`
+  - Prod: `docker compose --profile prod build`
+
+## Licencia
+
+Proyecto disponible para fines educativos y como base de referencia.
