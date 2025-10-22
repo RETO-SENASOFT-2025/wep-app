@@ -1,17 +1,20 @@
 <header class="fixed top-0 left-0 right-0 bg-gradient-to-r from-[#0b2250] to-[#1a3a7a] text-white shadow-md z-50">
-  <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <button id="toggleSidebar" class="md:hidden p-2 rounded-full hover:bg-white/20 transition-colors transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/30">
+  <div class="mx-auto max-w-7xl px-2 md:px-4 py-3 flex items-center gap-3">
+    <!-- Logo pegado a la izquierda -->
+    <a href="/" class="flex items-center gap-2">
+      <img src="{{ request.url_for('static', path='favicon.webp') }}" alt="SuperApp" class="h-8 w-8" />
+      <span class="text-xl font-bold tracking-wide">SuperApp</span>
+    </a>
+    <!-- Derecha: frase bonita y botón de menú en móvil -->
+    <div class="ml-auto flex items-center gap-2">
+      <span class="hidden sm:inline rounded-full bg-white/10 px-3 py-1 text-xs md:text-sm">
+        Un puente digital hacia la equidad
+      </span>
+      <button id="toggleSidebar" class="md:hidden p-2 rounded-full hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30" aria-label="Abrir menú">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
-      <div class="flex items-center gap-3">
-        <div class="bg-white/10 p-1.5 rounded-lg shadow-inner">
-          <img src="{{ request.url_for('static', path='favicon.webp') }}" alt="SuperApp" class="h-8 w-8 rounded transform hover:scale-105 transition-transform" />
-        </div>
-        <span class="text-xl font-bold tracking-wide">SuperApp</span>
-      </div>
     </div>
   </div>
 </header>
