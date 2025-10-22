@@ -10,6 +10,24 @@ import os
 
 app = FastAPI(title="SuperApp", docs_url=None, redoc_url=None, openapi_url=None)
 
+# Cargar variables de entorno desde app/.env si existe (sin dependencias externas)
+def load_env_file(path):
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" in line:
+                        key, value = line.split("=", 1)
+                        os.environ.setdefault(key.strip(), value.strip())
+    except Exception:
+        # Ignora errores de lectura del .env
+        pass
+
+load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
+
 # Middlewares de seguridad básicos
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"], allow_credentials=True, allow_methods=["GET", "POST"], allow_headers=["*"])
@@ -35,7 +53,8 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 # Ruta raíz
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-	return templates.TemplateResponse("home.html", {"request": request})
+	api_status_url = os.getenv("API_STATUS_URL") or request.url_for("status")
+	return templates.TemplateResponse("home.html", {"request": request, "api_status_url": api_status_url})
 
 
 # Ruta de status simple de texto
@@ -48,7 +67,8 @@ async def status():
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 	if exc.status_code == 404:
-		return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+		api_status_url = os.getenv("API_STATUS_URL") or request.url_for("status")
+		return templates.TemplateResponse("404.html", {"request": request, "api_status_url": api_status_url}, status_code=404)
 	# Fallback para otros errores HTTP
 	return PlainTextResponse(str(getattr(exc, "detail", "Error")), status_code=exc.status_code)
 
