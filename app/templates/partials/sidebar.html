@@ -1,0 +1,20 @@
+<aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 transform transition-transform duration-300 -translate-x-full md:translate-x-0 z-40 bg-[#0b2250] text-white shadow-xl">
+  <div class="h-full flex flex-col">
+    <div class="px-4 py-3 border-b border-white/10">
+      <h2 class="text-sm font-semibold tracking-wide">Conversaciones</h2>
+    </div>
+    <div class="p-4 space-y-3">
+      <div class="flex gap-2">
+        <input id="newChatTitle" type="text" placeholder="Nombre del chat" class="flex-1 rounded-md px-3 py-2 text-sm text-slate-900" />
+        <button id="createChat" class="rounded-md px-3 py-2 text-sm font-medium bg-[#7FFFD4] text-[#0b2250] hover:bg-[#6FEFC4]">Crear</button>
+      </div>
+      <button id="newChatQuick" class="w-full rounded-md px-3 py-2 text-sm font-medium bg-white/10 hover:bg-white/20">Nueva conversación</button>
+    </div>
+    <nav class="flex-1 overflow-y-auto p-2">
+      <ul id="chatList" class="space-y-1"></ul>
+    </nav>
+    <div class="px-4 py-3 border-t border-white/10 text-xs text-white/70">
+      <button id="closeSidebar" class="md:hidden underline">Cerrar</button>
+    </div>
+  </div>
+</aside>

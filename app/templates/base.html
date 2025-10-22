@@ -12,58 +12,9 @@
     </head>
     <body class="min-h-screen bg-gray-50 text-slate-900">
         <!-- Header -->
-        <header class="sticky top-0 z-50 bg-[#0b2250] text-white">
-            <div class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
-                <button id="toggleSidebar"
-                        class="md:hidden inline-flex items-center justify-center rounded-md p-2 hover:bg-white/10"
-                        aria-label="Abrir menú">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-6 w-6"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-                <a href="/" class="flex items-center gap-2">
-                    <img src="{{ request.url_for('static', path='favicon.webp') }}"
-                         alt="SuperApp"
-                         class="h-6 w-6 rounded" />
-                    <span class="font-semibold tracking-wide">SuperApp</span>
-                </a>
-                <div class="ml-auto flex items-center gap-2">
-                    <span class="text-xs md:text-sm text-white/80">Innovador, simple y rápido</span>
-                </div>
-            </div>
-        </header>
+        {% include "partials/header.html" %}
         <!-- Sidebar (drawer on mobile) -->
-        <aside id="sidebar"
-               class="fixed md:static inset-y-0 left-0 w-72 transform transition-transform duration-300 -translate-x-full md:translate-x-0 z-40 bg-[#0b2250] text-white shadow-xl">
-            <div class="h-full flex flex-col">
-                <div class="px-4 py-3 border-b border-white/10">
-                    <h2 class="text-sm font-semibold tracking-wide">Conversaciones</h2>
-                </div>
-                <div class="p-4 space-y-3">
-                    <div class="flex gap-2">
-                        <input id="newChatTitle"
-                               type="text"
-                               placeholder="Nombre del chat"
-                               class="flex-1 rounded-md px-3 py-2 text-sm text-slate-900" />
-                        <button id="createChat"
-                                class="rounded-md px-3 py-2 text-sm font-medium bg-[#7FFFD4] text-[#0b2250] hover:bg-[#6FEFC4]">Crear</button>
-                    </div>
-                    <button id="newChatQuick"
-                            class="w-full rounded-md px-3 py-2 text-sm font-medium bg-white/10 hover:bg-white/20">Nueva conversación</button>
-                </div>
-                <nav class="flex-1 overflow-y-auto p-2">
-                    <ul id="chatList" class="space-y-1">
-                    </ul>
-                </nav>
-                <div class="px-4 py-3 border-t border-white/10 text-xs text-white/70">
-                    <button id="closeSidebar" class="md:hidden underline">Cerrar</button>
-                </div>
-            </div>
-        </aside>
+        {% include "partials/sidebar.html" %}
         <!-- Main content -->
         <div class="md:ml-72">
             <main class="mx-auto max-w-7xl p-4 md:p-6">

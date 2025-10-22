@@ -1,21 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
-    <section class="grid gap-6">
-        <div class="rounded-2xl bg-white shadow-sm p-6">
-            <div class="flex items-center gap-3">
-                <img src="{{ request.url_for('static', path='favicon.webp') }}"
-                     alt="SuperApp"
-                     class="h-8 w-8 rounded" />
-                <h1 class="text-xl font-semibold">Bienvenido a SuperApp</h1>
-            </div>
-            <p class="mt-2 text-sm text-slate-600">Selecciona o crea una conversación desde la barra lateral. Todo se guarda localmente en tu navegador.</p>
-        </div>
-        <div class="rounded-2xl bg-white shadow-sm p-6">
-            <h2 class="text-lg font-semibold">Conversación activa</h2>
-            <p id="activeChatTitle" class="mt-1 text-sm text-slate-600">Sin conversación seleccionada</p>
-            <div class="mt-4 text-sm text-slate-500">
-                Esta es un área de contenido. Aquí podrías mostrar mensajes, prompts o cualquier interacción. Por ahora, es un placeholder.
-            </div>
-        </div>
-    </section>
+<section class="grid gap-6">
+  <div class="rounded-2xl bg-white shadow-sm p-6">
+    <div class="flex items-center gap-3">
+      <img src="{{ request.url_for('static', path='favicon.webp') }}" alt="SuperApp" class="h-8 w-8 rounded" />
+      <h1 class="text-xl font-semibold">Bienvenido a SuperApp</h1>
+    </div>
+    <p class="mt-2 text-sm text-slate-600">Selecciona o crea una conversación desde la barra lateral. Todo se guarda localmente en tu navegador.</p>
+  </div>
+
+  <div class="rounded-2xl bg-white shadow-sm p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-semibold">Conversación activa</h2>
+        <p id="activeChatTitle" class="mt-1 text-sm text-slate-600">Sin conversación seleccionada</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="clearMessages" class="rounded-md px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200">Limpiar mensajes</button>
+      </div>
+    </div>
+
+    <ul id="messagesList" class="mt-4 space-y-3"></ul>
+
+    <div class="mt-6 grid gap-2">
+      <textarea id="messageInput" rows="3" class="w-full rounded-md border border-slate-200 p-3 text-sm" placeholder="Escribe tu mensaje... (Ctrl+Enter para enviar)"></textarea>
+      <div class="flex justify-end">
+        <button id="sendMessage" class="rounded-md px-4 py-2 text-sm font-medium bg-[#0b2250] text-white hover:bg-[#0a1e46]">Enviar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="{{ request.url_for('static', path='js/messages.js') }}"></script>
 {% endblock %}
