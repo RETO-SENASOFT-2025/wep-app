@@ -35,8 +35,8 @@
       const ready = new CustomEvent('SuperApp:onReady');
       w.dispatchEvent(ready);
       showToast('UI lista');
-    }).catch((e) => console.error('IndexedDB error', e));
-  });
+    }).catch(() => {});
+});
 
   w.showToast = showToast;
 })(window);
