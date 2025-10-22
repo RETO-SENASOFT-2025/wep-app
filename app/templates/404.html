@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-    <section class="mx-auto max-w-lg text-center">
-        <div class="rounded-2xl bg-white shadow-sm p-8">
-            <div class="text-5xl font-extrabold text-[#0b2250] mb-2">404</div>
-            <h1 class="text-xl font-semibold text-[#0b2250] mb-3">Página no encontrada</h1>
-            <p class="text-sm text-slate-600 mb-6">
-                La ruta que solicitaste no existe. Puedes volver al inicio o seleccionar una conversación desde el panel lateral.
-            </p>
+<section class="mx-auto max-w-lg text-center">
+    <div class="rounded-2xl bg-white shadow-sm p-8">
+        <div class="text-5xl font-extrabold text-[#0b2250] mb-2">404</div>
+        <h1 class="text-xl font-semibold text-[#0b2250] mb-3">Página no encontrada</h1>
+        <p class="text-sm text-slate-600 mb-6">
+            La ruta que solicitaste no existe. Por favor, vuelve a la página de inicio.
+        </p>
+        <div class="flex justify-center">
             <a href="/"
-               class="inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium text-[#0b2250] bg-[#7FFFD4] hover:bg-[#6FEFC4] transition-colors">
+                class="inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium text-[#0b2250] bg-[#7FFFD4] hover:bg-[#6FEFC4] transition-colors">
                 Volver a inicio
             </a>
         </div>
-    </section>
+    </div>
+</section>
 {% endblock %}
