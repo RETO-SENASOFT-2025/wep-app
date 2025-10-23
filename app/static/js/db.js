@@ -77,10 +77,10 @@
         cursorReq.onerror = () => reject(cursorReq.error);
       });
     },
-    addMessage(chatId, text) {
+    addMessage(chatId, text, role = 'user') {
       return new Promise((resolve, reject) => {
         const now = new Date().toISOString();
-        const req = this.tx('messages', 'readwrite').add({ conversation_id: Number(chatId), text, created_at: now });
+        const req = this.tx('messages', 'readwrite').add({ conversation_id: Number(chatId), text, role, created_at: now });
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
       });
@@ -97,7 +97,15 @@
         };
         cursorReq.onerror = () => reject(cursorReq.error);
       });
-    }
+    },
+    getConversation(id) {
+      return new Promise((resolve, reject) => {
+        const req = this.tx('conversations').get(Number(id));
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    },
   };
   w.SuperAppDB = SuperAppDB;
 })(window);
+
