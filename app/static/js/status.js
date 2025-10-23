@@ -1,8 +1,7 @@
 (function (w) {
   const q = (id) => document.getElementById(id);
   function getStatusUrl() {
-    const meta = document.querySelector('meta[name="app-status-url"]');
-    return (meta && meta.content) || '/status';
+    return '/status';
   }
 
   function setComposerDisabled(disabled) {
@@ -42,11 +41,10 @@
 
   function init() {
     // Botón de reintento manual si existe
-    const retry = document.getElementById('apiRetryNow');
-    retry && retry.addEventListener('click', checkStatus);
     checkStatus();
     // Reverifica cada 12s para desbloquear si vuelve a estar online
-    w.setInterval(checkStatus, 12000);
+    const RECHECK_MS = 12000;
+    w.setInterval(checkStatus, RECHECK_MS);
   }
 
   // Inicia cuando el DOM esté listo

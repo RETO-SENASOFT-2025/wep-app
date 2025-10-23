@@ -53,8 +53,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 # Ruta raíz
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-	api_status_url = os.getenv("API_STATUS_URL") or request.url_for("status")
-	return templates.TemplateResponse("home.html", {"request": request, "api_status_url": api_status_url})
+	return templates.TemplateResponse("home.html", {"request": request})
 
 
 # Ruta de status simple de texto
@@ -67,8 +66,7 @@ async def status():
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 	if exc.status_code == 404:
-		api_status_url = os.getenv("API_STATUS_URL") or request.url_for("status")
-		return templates.TemplateResponse("404.html", {"request": request, "api_status_url": api_status_url}, status_code=404)
+		return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
 	# Fallback para otros errores HTTP
 	return PlainTextResponse(str(getattr(exc, "detail", "Error")), status_code=exc.status_code)
 
