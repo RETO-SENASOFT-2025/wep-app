@@ -1,12 +1,16 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.middleware.cors import CORSMiddleware
+
+
 import uvicorn
 import os
+import json
+import urllib.request
+import urllib.error
+from pydantic import BaseModel
 
 app = FastAPI(title="SuperApp", docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -29,8 +33,8 @@ def load_env_file(path):
 load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
 
 # Middlewares de seguridad básicos
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"], allow_credentials=True, allow_methods=["GET", "POST"], allow_headers=["*"])
+
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -39,8 +43,7 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    if request.url.scheme == "https":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
     return response
 
 # Configurar templates (ruta absoluta para evitar problemas de cwd)
@@ -56,10 +59,75 @@ async def home(request: Request):
 	return templates.TemplateResponse("home.html", {"request": request})
 
 
-# Ruta de status simple de texto
+# Ruta de status simple de texto (backend propio)
 @app.get("/status", response_class=PlainTextResponse)
 async def status():
 	return "on"
+
+class MessagePayload(BaseModel):
+    message: str
+    conversation_id: int | None = None
+
+@app.post("/api/message")
+async def api_message(payload: MessagePayload):
+    msg = (payload.message or "").strip()
+    if not msg:
+        return {"reply": ""}
+
+    # Base del backend de IA externo
+    ai_base = (os.environ.get("AI_API_URL", "") or "").strip()
+    if not ai_base:
+        raise HTTPException(status_code=503, detail="AI backend URL not configured")
+    ask_url = ai_base.rstrip("/") + "/ask"
+
+    try:
+        req = urllib.request.Request(
+            ask_url,
+            data=json.dumps({"message": msg, "conversation_id": payload.conversation_id}).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            status_code = getattr(resp, "status", 200)
+            if status_code != 200:
+                raise HTTPException(status_code=503, detail="AI backend error")
+            raw = resp.read()
+            data = json.loads(raw.decode("utf-8"))
+            # Mapeo flexible del campo de respuesta
+            reply = ""
+            if isinstance(data, dict):
+                for key in ("reply", "answer", "text", "message", "result"):
+                    val = data.get(key)
+                    if isinstance(val, str) and val.strip():
+                        reply = val.strip()
+                        break
+            elif isinstance(data, str):
+                reply = data.strip()
+            if not reply:
+                raise HTTPException(status_code=503, detail="AI backend empty reply")
+            return {"reply": reply}
+    except Exception:
+        raise HTTPException(status_code=503, detail="AI backend unreachable")
+
+
+@app.get("/api/ai_status")
+async def api_ai_status():
+    """Chequea el endpoint externo /status.
+    Devuelve {ok: true} si responde 200, en caso contrario {ok: false}.
+    """
+    ai_base = (os.environ.get("AI_API_URL", "") or "").strip()
+    if not ai_base:
+        return {"ok": False, "reason": "not_configured"}
+    status_url = ai_base.rstrip("/") + "/status"
+    try:
+        req = urllib.request.Request(status_url, headers={"Accept": "application/json"}, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            status_code = getattr(resp, "status", 200)
+            return {"ok": status_code == 200}
+    except urllib.error.HTTPError as e:
+        return {"ok": False, "reason": f"http_{e.code}"}
+    except Exception:
+        return {"ok": False, "reason": "unreachable"}
 
 
 # Handler de 404: mostrar UI minimalista con enlace a inicio
