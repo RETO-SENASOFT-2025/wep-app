@@ -4,7 +4,7 @@
     const q = (sel) => d.querySelector(sel.startsWith('#') ? sel : `#${sel}`);
 
     w.SuperAppState = w.SuperAppState || {
-        serviceOnline: true,
+        aiOnline: true,
         chatSelected: false,
         processing: false,
     };
@@ -53,7 +53,7 @@
 
     async function refresh() {
         const chatId = getActiveChatId();
-        const messages = chatId ? await w.SuperAppDB.getMessages(chatId) : [];
+        const messages = chatId ? await w.SuperAppDB.getMessagesByChat(chatId) : [];
 
         renderMessages(messages);
 
@@ -81,8 +81,9 @@
         const sendBtn = q('sendMessage');
         const input = q('messageInput');
         if (sendBtn && input) {
-            sendBtn.disabled = w.SuperAppState.processing;
-            input.disabled = w.SuperAppState.processing;
+            const disabled = w.SuperAppState.processing || !w.SuperAppState.chatSelected;
+            sendBtn.disabled = disabled;
+            input.disabled = disabled;
         }
     }
 
@@ -106,7 +107,7 @@
         clearBtn && clearBtn.addEventListener('click', async () => {
             const chatId = getActiveChatId();
             if (!chatId) return;
-            await w.SuperAppDB.clearMessages(chatId);
+            await w.SuperAppDB.deleteMessagesByChat(chatId);
             await refresh();
         });
 
@@ -173,6 +174,8 @@
         const sendBtn = q('sendMessage');
         if (input) updateCharCount();
 
+        bindUI();
+
         refresh();
 
         const noChatHint = q('noChatHint');
@@ -199,4 +202,3 @@
         init();
     }
 })();
-

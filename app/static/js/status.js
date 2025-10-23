@@ -1,12 +1,12 @@
 (function (w) {
     const q = (id) => document.getElementById(id);
-    w.SuperAppState = w.SuperAppState || { serviceOnline: false, chatSelected: false, processing: false };
+    w.SuperAppState = w.SuperAppState || { aiOnline: false, chatSelected: false, processing: false };
 
     function applyComposerLock() {}
     w.applyComposerLock = applyComposerLock;
 
     function getStatusUrl() {
-        return '/api/status';
+        return '/api/ai_status';
     }
 
     function renderAiIndicator(isOnline) {
@@ -19,7 +19,7 @@
 
     function updateApiStatus(isOnline) {
         renderAiIndicator(isOnline);
-        w.SuperAppState.serviceOnline = !!isOnline;
+        w.SuperAppState.aiOnline = !!isOnline;
     }
 
     async function checkStatus() {
