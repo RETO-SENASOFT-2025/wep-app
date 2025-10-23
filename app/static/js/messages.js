@@ -1,10 +1,8 @@
-/* global window, document */
 (function () {
   const w = window;
   const d = document;
   const q = (sel) => d.querySelector(sel.startsWith('#') ? sel : `#${sel}`);
 
-  // Estado global ya existente
   w.SuperAppState = w.SuperAppState || {
     aiOnline: true,
     chatSelected: false,
@@ -49,14 +47,12 @@
       list.appendChild(li);
     });
 
-    // auto-scroll al último mensaje
     scrollToBottom();
   }
 
   async function refresh() {
     const chatId = getActiveChatId();
 
-    // alterna visibilidad del composer vs aviso
     updateComposerVisibility();
 
     if (!chatId) {
@@ -94,10 +90,8 @@
     const content = input.value.trim();
     if (!content) return;
 
-    // guardar mensaje del usuario
     await w.SuperAppDB.addMessage(chatId, content, 'user');
 
-    // actualizar título de conversación si sigue con valor por defecto
     try {
       const conv = await w.SuperAppDB.getConversation(chatId);
       const defaultTitles = ['Nueva conversación', '', null, undefined];
@@ -113,7 +107,6 @@
     updateCharCount();
     await refresh();
 
-    // marcar procesamiento
     w.SuperAppState.processing = true;
 
     try {
@@ -185,7 +178,6 @@
       });
     }
 
-    // cambios de chat
     w.addEventListener('SuperApp:activeChatChanged', async (ev) => {
       const { id, title } = (ev && ev.detail) || {};
       if (id) {
@@ -199,7 +191,6 @@
       await refresh();
     });
 
-    // listo
     w.addEventListener('SuperApp:onReady', async () => {
       updateComposerVisibility();
       updateCharCount();
@@ -207,6 +198,5 @@
     });
   }
 
-  // init
   bindEvents();
 })();

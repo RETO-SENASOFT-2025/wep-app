@@ -23,7 +23,6 @@
         </button>`;
       list.appendChild(li);
     }
-    // Bind actions
     list.querySelectorAll('.delete-chat').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = Number(e.currentTarget.getAttribute('data-id'));
@@ -41,7 +40,6 @@
         if (display) display.textContent = title;
         const ev = new CustomEvent('SuperApp:activeChatChanged', { detail: { id, title } });
         w.dispatchEvent(ev);
-        // Refrescar para aplicar resaltado
         refresh();
         w.SuperAppLayout && w.SuperAppLayout.closeSidebar();
       });
@@ -61,7 +59,6 @@
 
   async function ensureDefaultChatOnLoad() {
     try {
-      // Solo crear una vez por carga de página
       if (sessionStorage.getItem('createdBlankChatThisLoad') === 'true') return;
       sessionStorage.setItem('createdBlankChatThisLoad', 'true');
       const newId = await w.SuperAppDB.addConversation('Nueva conversación');
@@ -90,7 +87,6 @@
     });
     search && search.addEventListener('input', () => { refresh(); });
 
-    // Actualizar resaltado cuando cambie la conversación activa desde otros módulos
     w.addEventListener('SuperApp:activeChatChanged', () => { refresh(); });
   }
 

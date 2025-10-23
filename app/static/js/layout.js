@@ -29,12 +29,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    // Restablecer selección de chat en cada recarga
     try { localStorage.removeItem('activeChatId'); } catch (e) {}
 
     bindDrawer();
     w.SuperAppDB.openDB().then((db) => {
-      w.db = db; // compat
+      w.db = db;
       const ready = new CustomEvent('SuperApp:onReady');
       w.dispatchEvent(ready);
     }).catch(() => { });

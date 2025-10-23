@@ -1,9 +1,7 @@
 (function (w) {
   const q = (id) => document.getElementById(id);
-  // Estado global para bloqueo del composer por múltiples razones
   w.SuperAppState = w.SuperAppState || { aiOnline: false, chatSelected: false, processing: false };
   function applyComposerLock() {
-    // No-op: ya no bloqueamos el composer por estado de IA/chat
   }
   w.applyComposerLock = applyComposerLock;
 
@@ -22,7 +20,6 @@
   function updateApiStatus(isOnline) {
     renderAiIndicator(isOnline);
     w.SuperAppState.aiOnline = !!isOnline;
-    // No bloqueamos el composer aquí
   }
 
   async function checkStatus() {
@@ -38,7 +35,6 @@
   }
 
   function init() {
-    // No bloqueamos el composer al iniciar
     checkStatus();
     const RECHECK_MS = 12000;
     w.setInterval(checkStatus, RECHECK_MS);
