@@ -1,99 +1,212 @@
-(function (w) {
-  const q = (id) => document.getElementById(id);
+/* global window, document */
+(function () {
+  const w = window;
+  const d = document;
+  const q = (sel) => d.querySelector(sel.startsWith('#') ? sel : `#${sel}`);
 
-  function renderMessages(items) {
+  // Estado global ya existente
+  w.SuperAppState = w.SuperAppState || {
+    aiOnline: true,
+    chatSelected: false,
+    processing: false,
+  };
+
+  function getActiveChatId() {
+    const id = w.localStorage.getItem('activeChatId');
+    return id ? Number(id) : null;
+  }
+
+  function setActiveChatTitle(title) {
+    const el = d.getElementById('activeChatTitle');
+    if (el) el.textContent = title || 'Sin conversación seleccionada';
+  }
+
+  function updateCharCount() {
+    const input = q('messageInput');
+    const counter = q('charCount');
+    if (!input || !counter) return;
+    const len = input.value.length;
+    counter.textContent = `${len}/500`;
+  }
+
+  function scrollToBottom() {
+    const container = d.querySelector('.flex-1.overflow-y-auto');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }
+
+  function renderMessages(messages) {
     const list = q('messagesList');
     if (!list) return;
     list.innerHTML = '';
-    for (const m of items) {
-      const li = document.createElement('li');
-      li.className = 'rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 shadow-md p-4 text-sm border border-gray-200 hover:shadow-lg transition-shadow animate-fadeIn';
-      li.innerHTML = `
-        <div class="flex items-start gap-3">
-          <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-full p-2 text-white flex-shrink-0 shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          </div>
-          <div class="flex-1">
-            <div class="text-slate-900 whitespace-pre-wrap text-sm sm:text-base">${m.text || ''}</div>
-            <div class="text-xs text-slate-500 mt-2 flex items-center font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              ${new Date(m.created_at).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      `;
+
+    messages.forEach((msg) => {
+      const li = d.createElement('li');
+      li.className = 'rounded-xl p-4 shadow-sm bg-white border border-gray-100';
+      const who = msg.role === 'user' ? 'Tú' : 'Asistente';
+      li.innerHTML = `<div class="text-xs text-slate-500 mb-1">${who}</div><div class="text-sm text-slate-800">${msg.text}</div>`;
       list.appendChild(li);
-    }
+    });
+
+    // auto-scroll al último mensaje
+    scrollToBottom();
   }
 
   async function refresh() {
-    const activeId = Number(w.localStorage.getItem('activeChatId'));
-    if (!activeId) return;
-    const items = await w.SuperAppDB.getMessagesByChat(activeId);
-    renderMessages(items);
+    const chatId = getActiveChatId();
+
+    // alterna visibilidad del composer vs aviso
+    updateComposerVisibility();
+
+    if (!chatId) {
+      setActiveChatTitle('Sin conversación seleccionada');
+      renderMessages([]);
+      w.SuperAppState.chatSelected = false;
+      return;
+    }
+
+    w.SuperAppState.chatSelected = true;
+
+    // Cargar mensajes de IndexedDB
+    try {
+      const messages = await w.SuperAppDB.getMessagesByChat(chatId);
+      renderMessages(messages || []);
+    } catch (err) {
+      console.error('Error al cargar mensajes', err);
+      renderMessages([]);
+    }
   }
 
-  function bindComposer() {
+  function updateComposerVisibility() {
+    const hasChat = !!getActiveChatId();
+    const comp = q('composerContainer');
+    const hint = q('noChatHint');
+    if (comp) comp.classList.toggle('hidden', !hasChat);
+    if (hint) hint.classList.toggle('hidden', hasChat);
+  }
+
+  async function sendMessage() {
+    const chatId = getActiveChatId();
+    const input = q('messageInput');
+    if (!chatId || !input) return;
+
+    const content = input.value.trim();
+    if (!content) return;
+
+    // guardar mensaje del usuario
+    await w.SuperAppDB.addMessage(chatId, content, 'user');
+
+    // actualizar título de conversación si sigue con valor por defecto
+    try {
+      const conv = await w.SuperAppDB.getConversation(chatId);
+      const defaultTitles = ['Nueva conversación', '', null, undefined];
+      const needsTitleUpdate = conv && defaultTitles.includes(conv.title);
+      if (needsTitleUpdate) {
+        await w.SuperAppDB.updateConversation(chatId, { title: content.slice(0, 40) });
+      }
+    } catch (e) {
+      try { await w.SuperAppDB.updateConversation(chatId, {}); } catch (_) {}
+    }
+
+    input.value = '';
+    updateCharCount();
+    await refresh();
+
+    // marcar procesamiento
+    w.SuperAppState.processing = true;
+
+    try {
+      const resp = await fetch('/api/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content, chatId }),
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      const reply = (data && data.reply) || 'Sin respuesta';
+
+      await w.SuperAppDB.addMessage(chatId, reply, 'bot');
+
+      await refresh();
+    } catch (err) {
+      console.error('Error enviando mensaje', err);
+    } finally {
+      w.SuperAppState.processing = false;
+    }
+  }
+
+  function bindEvents() {
     const input = q('messageInput');
     const sendBtn = q('sendMessage');
     const clearBtn = q('clearMessages');
-    const charCount = q('charCount');
-    if (!input || !sendBtn) return;
+    const createBtn = q('noChatCreate');
 
-    async function send() {
-      const text = input.value.trim();
-      const activeId = Number(w.localStorage.getItem('activeChatId'));
-      if (!text || !activeId) return;
-      await w.SuperAppDB.addMessage(activeId, text);
-      input.value = '';
-      // Resetea contador
-      if (charCount) { charCount.textContent = `0/500`; charCount.classList.remove('text-red-500'); charCount.classList.add('text-gray-400'); }
-      await refresh();
-    }
-
-    // Contador de caracteres
-    if (charCount) {
-      const updateCount = () => {
-        const len = (input.value || '').length;
-        charCount.textContent = `${len}/500`;
-        if (len >= 450) {
-          charCount.classList.add('text-red-500');
-          charCount.classList.remove('text-gray-400');
-        } else {
-          charCount.classList.remove('text-red-500');
-          charCount.classList.add('text-gray-400');
+    if (input) {
+      input.addEventListener('input', updateCharCount);
+      input.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          sendMessage();
         }
-      };
-      updateCount();
-      input.addEventListener('input', updateCount);
+      });
     }
 
-    sendBtn.addEventListener('click', send);
-    input.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') send();
-    });
-    clearBtn && clearBtn.addEventListener('click', async () => {
-      const activeId = Number(w.localStorage.getItem('activeChatId'));
-      if (!activeId) return;
-      await w.SuperAppDB.deleteMessagesByChat(activeId);
+    if (sendBtn) {
+      sendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        sendMessage();
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', async () => {
+        const chatId = getActiveChatId();
+        if (!chatId) return;
+        await w.SuperAppDB.deleteMessagesByChat(chatId);
+        await refresh();
+      });
+    }
+
+    if (createBtn) {
+      createBtn.addEventListener('click', async () => {
+        try {
+          const newId = await w.SuperAppDB.addConversation('Nueva conversación');
+          w.localStorage.setItem('activeChatId', String(newId));
+          setActiveChatTitle('Nueva conversación');
+          updateComposerVisibility();
+          w.SuperAppChats && w.SuperAppChats.refresh && w.SuperAppChats.refresh();
+          w.dispatchEvent(new CustomEvent('SuperApp:activeChatChanged', { detail: { id: Number(newId), title: 'Nueva conversación' } }));
+          await refresh();
+        } catch (err) {
+          console.error('No se pudo crear la conversación', err);
+        }
+      });
+    }
+
+    // cambios de chat
+    w.addEventListener('SuperApp:activeChatChanged', async (ev) => {
+      const { id, title } = (ev && ev.detail) || {};
+      if (id) {
+        w.localStorage.setItem('activeChatId', String(id));
+        setActiveChatTitle(title || 'Conversación');
+      } else {
+        w.localStorage.removeItem('activeChatId');
+        setActiveChatTitle('Sin conversación seleccionada');
+      }
+      updateComposerVisibility();
       await refresh();
-      w.showToast && w.showToast('Mensajes limpiados');
+    });
+
+    // listo
+    w.addEventListener('SuperApp:onReady', async () => {
+      updateComposerVisibility();
+      updateCharCount();
+      await refresh();
     });
   }
 
-  function init() {
-    bindComposer();
-    refresh();
-  }
-
-  w.addEventListener('SuperApp:onReady', () => {
-    // Solo inicializa si la página tiene el composer
-    if (q('messageInput')) init();
-  });
-  w.SuperAppMessages = { init, refresh };
-})(window);
-
+  // init
+  bindEvents();
+})();
