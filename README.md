@@ -112,6 +112,3 @@ docker run --name superapp -p 8000:8000 -e ENVIRONMENT=production -e UVICORN_WOR
 - Backend IA sin respuesta → `503 AI backend unreachable/empty reply`.
 - Puerto ocupado → mapear otro: `-p 8080:8000` y usar `http://localhost:8080/`.
 - Autoreload no activa en dev → verificar volumen `.:/app` y perfil `dev`.
-
-## Licencia
-Proyecto con fines educativos y base de referencia.
