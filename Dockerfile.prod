@@ -1,189 +1,25 @@
-# ---------------------------------------------------------------------------
-# Dockerfile para entorno de producción
-# ---------------------------------------------------------------------------
-# Propósito:
-#   Construye una imagen ligera basada en Debian slim con Python 3.13
-#   preparada para ejecutar la aplicación FastAPI mediante Uvicorn en
-#   modo de producción (múltiples workers, sin autoreload).
-#
-# Resumen de decisiones de diseño:
-#   - Usa la imagen 'python:3.13.9-slim-bookworm' para mantener la imagen
-#     pequeña y reducir la superficie de ataque.
-#   - Instala las dependencias a partir de 'requirements.txt'.
-#   - Expón el puerto 8000 por convenio con Uvicorn.
-#   - Configura el entrypoint para arrancar Uvicorn con un número configurable de workers.
-#
-# Recomendaciones:
-#   - En entornos reales de producción, usa una imagen de base con parches de
-#     seguridad y versiones que cumplan la política de la organización.
-#   - Construye la imagen en un pipeline CI y, si es necesario, firma la imagen.
-#   - No incluyas archivos sensibles ni secretos en la imagen; usa variables de
-#     entorno o un gestor de secretos (Vault, AWS Secrets Manager, etc.).
-
 FROM python:3.13.9-slim-bookworm
 
-# ---------------------------------------------------------------------------
-# Variables de entorno
-# ---------------------------------------------------------------------------
-# PYTHONDONTWRITEBYTECODE: evita la escritura de archivos .pyc en disco.
-# PYTHONUNBUFFERED: fuerza a Python a no bufferizar stdout/stderr (útil para logs).
-# PIP_NO_CACHE_DIR/PIP_DISABLE_PIP_VERSION_CHECK: usa opciones de pip para
-#   reducir tamaño de la imagen y ruido en la salida.
-# UVICORN_WORKERS: número de procesos worker que Uvicorn lanzará (configurable).
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     UVICORN_WORKERS=2
+ENV PORT=8000
 
-# ---------------------------------------------------------------------------
-# Directorio de trabajo
-# ---------------------------------------------------------------------------
 WORKDIR /app
 
-# ---------------------------------------------------------------------------
-# Dependencias del sistema
-# ---------------------------------------------------------------------------
-# Instala 'curl' para permitir healthchecks sencillos desde el host o desde
-# mecanismos de orquestación. Usa '--no-install-recommends' y limpia la caché
-# de apt al final para reducir el tamaño de la imagen.
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-# ---------------------------------------------------------------------------
-# Instalar dependencias de Python
-# ---------------------------------------------------------------------------
-# Copia únicamente 'requirements.txt' antes del resto del código para
-# aprovechar la caché de Docker al instalar dependencias (mejor para CI).
 COPY requirements.txt ./
-
-# Actualiza pip e instala dependencias sin caché de pip para mantener la
-# imagen ligera.
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# ---------------------------------------------------------------------------
-# Copiar el código de la aplicación
-# ---------------------------------------------------------------------------
-# Copia el resto de la aplicación al contenedor. Evita copiar archivos
-# innecesarios usando un '.dockerignore' (recomendado) para excluir tests,
-# entornos virtuales, credenciales y otros artefactos.
 COPY . .
 
-# Puerto en el que la aplicación escuchará. Coincide con el parámetro --port
-# usado en el CMD por defecto.
 EXPOSE 8000
 
-# ---------------------------------------------------------------------------
-# Comando de producción
-# ---------------------------------------------------------------------------
-# Ejecuta Uvicorn sin autoreload (modo producción) y con múltiples workers.
-# UVICORN_WORKERS se puede sobreescribir con 'docker run -e UVICORN_WORKERS=4'
-# o desde el manifiesto de despliegue (docker-compose / Kubernetes).
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS}"]
-# ---------------------------------------------------------------------------
-# Dockerfile para entorno de producción
-# ---------------------------------------------------------------------------
-# Propósito:
-#   Construir una imagen ligera basada en Debian slim con Python 3.13
-#   preparada para ejecutar nuestra aplicación FastAPI mediante Uvicorn en
-#   modo de producción (múltiples workers, sin autoreload).
-#
-# Resumen de decisiones de diseño:
-#   - Uso la imagen 'python:3.13.9-slim-bookworm' para mantener la imagen
-#     pequeña y reducir la superficie de ataque.
-# Propósito:
-#   Construye una imagen ligera basada en Debian slim con Python 3.13
-#   preparada para ejecutar nuestra aplicación FastAPI mediante Uvicorn en
-#   modo de producción (múltiples workers, sin autoreload).
-#   - Instalo las dependencias a partir de 'requirements.txt'.
-#   - Expongo el puerto 8000 por convenio con Uvicorn.
-#   - El entrypoint arranca Uvicorn con un número configurable de workers.
-#   - Instala las dependencias a partir de 'requirements.txt'.
-# Recomendaciones:
-#   - En entornos reales de producción, uso una imagen de base con parches de
-#   - Expón el puerto 8000 por convenio con Uvicorn.
-#   - Configura el entrypoint para arrancar Uvicorn con un número configurable de workers.
-#     seguridad y versiones que cumplan la política de la organización.
-#   - Construyo la imagen en un pipeline CI y, si es necesario, firmo la imagen.
-#   - No incluyo archivos sensibles ni secretos en la imagen; uso variables de
-#   - Construye la imagen en un pipeline CI y, si es necesario, firma la imagen.
-
-FROM python:3.13.9-slim-bookworm
-#   - No incluyas archivos sensibles ni secretos en la imagen; usa variables de
-#     entorno o un gestor de secretos (Vault, AWS Secrets Manager, etc.).
-
-# ---------------------------------------------------------------------------
-# Variables de entorno
-# ---------------------------------------------------------------------------
-# UVICORN_WORKERS: número de procesos worker que Uvicorn lanzará (configurable).
-# PYTHONUNBUFFERED: fuerzo a Python a no bufferizar stdout/stderr (útil para logs).
-# PIP_NO_CACHE_DIR/PIP_DISABLE_PIP_VERSION_CHECK: opciones de pip para
-#   reducir tamaño de la imagen y ruido en la salida.
-# Instala 'curl' aquí para permitir healthchecks sencillos desde el host o
-# desde mecanismos de orquestación. Usa flags para minimizar paquetes
-# recomendados y limpia la caché de apt al final para reducir el tamaño.
-# UVICORN_WORKERS: número de procesos worker que Uvicorn lanzará (configurable).
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    # Copia únicamente 'requirements.txt' antes del resto del código para
-    # aprovechar la caché de Docker al instalar dependencias (mejor para CI).
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=off \
-    # Actualiza pip e instala dependencias sin caché de pip para mantener
-    # la imagen ligera.
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    UVICORN_WORKERS=2
-
-# Ahora copia el resto de la aplicación al contenedor. Evita copiar archivos
-# innecesarios usando un '.dockerignore' (recomendado) para excluir tests,
-# entornos virtuales, credenciales y otros artefactos.
-# ---------------------------------------------------------------------------
-# Directorio de trabajo
-# ---------------------------------------------------------------------------
-# Ejecuta Uvicorn sin autoreload (modo producción) y con múltiples workers.
-# UVICORN_WORKERS se puede sobreescribir con 'docker run -e UVICORN_WORKERS=4'
-# o desde el manifiesto de despliegue (docker-compose / Kubernetes).
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS}"]
-
-# ---------------------------------------------------------------------------
-# Dependencias del sistema
-# ---------------------------------------------------------------------------
-# Instalo 'curl' aquí para permitir healthchecks sencillos desde el host o
-# desde mecanismos de orquestación. Uso flags para minimizar paquetes
-# recomendados y limpio la caché de apt al final para reducir el tamaño.
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# ---------------------------------------------------------------------------
-# Instalar dependencias de Python
-# ---------------------------------------------------------------------------
-# Copio únicamente 'requirements.txt' antes del resto del código para
-# aprovechar la caché de Docker al instalar dependencias (mejor para CI).
-COPY requirements.txt ./
-
-# Actualizo pip e instalo dependencias sin caché de pip para mantener
-# la imagen ligera.
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# ---------------------------------------------------------------------------
-# Copiar el código de la aplicación
-# ---------------------------------------------------------------------------
-# Ahora copio el resto de la aplicación al contenedor. Evito copiar archivos
-# innecesarios usando un '.dockerignore' (recomendado) para excluir tests,
-# entornos virtuales, credenciales y otros artefactos.
-COPY . .
-
-# Puerto en el que la aplicación escuchará. Coincide con el parámetro --port
-# usado en el CMD por defecto.
-EXPOSE 8000
-
-# ---------------------------------------------------------------------------
-# Comando de producción
-# ---------------------------------------------------------------------------
-# Ejecuto Uvicorn sin autoreload (modo producción) y con múltiples workers.
-# UVICORN_WORKERS se puede sobreescribir con 'docker run -e UVICORN_WORKERS=4'
-# o desde el manifiesto de despliegue (docker-compose / Kubernetes).
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${UVICORN_WORKERS}"]
+

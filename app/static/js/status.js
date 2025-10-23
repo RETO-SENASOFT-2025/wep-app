@@ -1,58 +1,50 @@
 (function (w) {
-  const q = (id) => document.getElementById(id);
-  function getStatusUrl() {
-    return '/status';
-  }
+    const q = (id) => document.getElementById(id);
+    w.SuperAppState = w.SuperAppState || { aiOnline: false, chatSelected: false, processing: false };
 
-  function setComposerDisabled(disabled) {
-    const input = q('messageInput');
-    const send = q('sendMessage');
-    [input, send].forEach((el) => {
-      if (!el) return;
-      el.disabled = disabled;
-      el.classList.toggle('opacity-50', disabled);
-      el.classList.toggle('cursor-not-allowed', disabled);
-    });
-  }
+    function applyComposerLock() {}
+    w.applyComposerLock = applyComposerLock;
 
-  function updateApiStatus(isOnline) {
-    const alert = q('apiStatusAlert');
-    if (!alert) return;
-    if (isOnline) {
-      alert.classList.add('hidden');
-      setComposerDisabled(false);
+    function getStatusUrl() {
+        return '/api/ai_status';
+    }
+
+    function renderAiIndicator(isOnline) {
+        const ind = q('aiStatusIndicator');
+        if (!ind) return;
+        const base = 'rounded-full px-3 py-1 text-xs md:text-sm border';
+        ind.className = base + (isOnline ? ' bg-green-100 text-green-700 border-green-200' : ' bg-red-100 text-red-700 border-red-200');
+        ind.textContent = isOnline ? 'Servicio OK' : 'Servicio caído';
+    }
+
+    function updateApiStatus(isOnline) {
+        renderAiIndicator(isOnline);
+        w.SuperAppState.aiOnline = !!isOnline;
+    }
+
+    async function checkStatus() {
+        const url = getStatusUrl();
+        try {
+            const resp = await fetch(url, { cache: 'no-store' });
+            const data = await resp.json().catch(() => ({}));
+            const ok = !!data.ok && resp.ok;
+            updateApiStatus(ok);
+        } catch (e) {
+            updateApiStatus(false);
+        }
+    }
+
+    function init() {
+        checkStatus();
+        const RECHECK_MS = 12000;
+        w.setInterval(checkStatus, RECHECK_MS);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-      alert.classList.remove('hidden');
-      setComposerDisabled(true);
+        init();
     }
-  }
 
-  async function checkStatus() {
-    const url = getStatusUrl();
-    try {
-      const resp = await fetch(url, { cache: 'no-store' });
-      const text = await resp.text();
-      const ok = resp.ok && String(text || '').trim().toLowerCase() === 'on';
-      updateApiStatus(ok);
-    } catch (e) {
-      updateApiStatus(false);
-    }
-  }
-
-  function init() {
-    // Botón de reintento manual si existe
-    checkStatus();
-    // Reverifica cada 12s para desbloquear si vuelve a estar online
-    const RECHECK_MS = 12000;
-    w.setInterval(checkStatus, RECHECK_MS);
-  }
-
-  // Inicia cuando el DOM esté listo
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  w.SuperAppStatus = { checkStatus };
+    w.SuperAppStatus = { checkStatus };
 })(window);
