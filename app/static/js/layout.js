@@ -40,7 +40,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         try {
-            localStorage.removeItem('activeChatId');
+            // Preservar la conversación activa entre recargas
+            // localStorage.removeItem('activeChatId');
         } catch (e) {}
 
         bindDrawer();

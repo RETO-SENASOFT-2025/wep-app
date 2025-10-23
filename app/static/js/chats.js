@@ -63,6 +63,10 @@
             sessionStorage.setItem('createdBlankChatThisLoad', 'true');
             const newId = await w.SuperAppDB.addConversation('Nueva conversación');
             sessionStorage.setItem('blankChatIdOnLoad', String(newId));
+            // Auto-seleccionar la conversación creada para habilitar el envío
+            w.localStorage.setItem('activeChatId', String(newId));
+            const ev = new CustomEvent('SuperApp:activeChatChanged', { detail: { id: newId, title: 'Nueva conversación' } });
+            w.dispatchEvent(ev);
         } catch (e) {}
     }
 
@@ -103,3 +107,4 @@
     w.addEventListener('SuperApp:onReady', init);
     w.SuperAppChats = { init, refresh };
 })(window);
+

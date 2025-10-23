@@ -113,7 +113,11 @@
 
         const noChatCreateBtn = q('noChatCreate');
         noChatCreateBtn && noChatCreateBtn.addEventListener('click', async () => {
-            await w.SuperAppDB.addConversation('Nueva conversación');
+            // Crear y seleccionar automáticamente para habilitar el envío
+            const newId = await w.SuperAppDB.addConversation('Nueva conversación');
+            w.localStorage.setItem('activeChatId', String(newId));
+            const ev = new CustomEvent('SuperApp:activeChatChanged', { detail: { id: newId, title: 'Nueva conversación' } });
+            w.dispatchEvent(ev);
             await refresh();
             w.showToast && w.showToast('Chat creado');
         });
@@ -201,4 +205,4 @@
     } else {
         init();
     }
-})();
+})();
