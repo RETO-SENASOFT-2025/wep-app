@@ -42,7 +42,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ## Configuración
 - Variables:
-  - `AI_API_URL`: URL base del backend de IA externo.
+  - `AI_API_URL`: URL base del backend externo (por ejemplo `http://localhost:8011`).
   - `ENVIRONMENT`: `development` o `production` (usado en Compose).
   - `UVICORN_WORKERS` (prod): número de workers (por defecto `2`).
 - Ubicación de variables: `app/.env` (cargado al inicio) y/o `docker-compose.yml`.
@@ -55,16 +55,17 @@ AI_API_URL="http://localhost:8011"
 ## API
 - `GET /` → Renderiza HTML (Jinja) con la home.
 - `GET /status` → Texto plano `on`.
-- `POST /api/message` → Envía texto al backend de IA.
+- `GET /api/status` → Estado JSON `{ ok: true }` (salud del servicio local).
+- `GET /api/ai_status` → Verifica `AI_API_URL/status` y devuelve `{ ok: true|false }` (salud del backend externo).
+- `POST /api/message` → Envía texto al backend externo.
   - Request: `{ "message": "texto" }`
-  - Respuesta: `{ "reply": "texto de respuesta" }`
+  - Respuesta: `{ "reply": "texto de respuesta" }` (según el backend externo)
   - Ejemplo:
 ```bash
 curl -X POST "http://localhost:8000/api/message" \
   -H "Content-Type: application/json" \
   -d '{"message": "Hola"}'
 ```
-- `GET /api/ai_status` → Verifica `AI_API_URL/status` y devuelve `{ ok: true|false }`.
 
 ## Estructura
 ```
@@ -105,10 +106,9 @@ docker run --name superapp -p 8000:8000 -e ENVIRONMENT=production -e UVICORN_WOR
 - Python (Ruff):
   - Verificación: `ruff check .`
   - Formateo: `ruff format .` o `ruff --fix .`
-- Nota: El proyecto no incluye linting para JavaScript por diseño. Si se requiere en el futuro, se puede integrar ESLint.
 
 ## Troubleshooting
 - `AI_API_URL` no configurada → `503 AI backend URL not configured`.
-- Backend IA sin respuesta → `503 AI backend unreachable/empty reply`.
+- Backend externo sin respuesta → `503 AI backend unreachable/empty reply`.
 - Puerto ocupado → mapear otro: `-p 8080:8000` y usar `http://localhost:8080/`.
 - Autoreload no activa en dev → verificar volumen `.:/app` y perfil `dev`.

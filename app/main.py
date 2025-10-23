@@ -75,15 +75,17 @@ async def api_message(payload: MessagePayload):
     if not msg:
         return {"reply": ""}
 
-    ai_base = (os.environ.get("AI_API_URL", "") or "").strip()
+    ai_base = (os.environ.get("AI_API_URL", "") or "").strip().strip('"').strip("'")
     if not ai_base:
         raise HTTPException(status_code=503, detail="AI backend URL not configured")
-    ask_url = ai_base.rstrip("/") + "/ask"
+    ask_path = (os.environ.get("AI_ASK_PATH", "/ask") or "/ask").strip()
+    ask_url = ai_base.rstrip("/") + "/" + ask_path.lstrip("/")
 
     try:
+        payload_body = {"texto": msg, "message": msg}
         req = urllib.request.Request(
             ask_url,
-            data=json.dumps({"texto": msg}).encode("utf-8"),
+            data=json.dumps(payload_body).encode("utf-8"),
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
         )
@@ -105,13 +107,14 @@ async def api_message(payload: MessagePayload):
             if not reply:
                 raise HTTPException(status_code=503, detail="AI backend empty reply")
             return {"reply": reply}
-    except Exception:
+    except Exception as e:
+        print(e)
         raise HTTPException(status_code=503, detail="AI backend unreachable")
 
 
 @app.get("/api/ai_status")
 async def api_ai_status():
-    ai_base = (os.environ.get("AI_API_URL", "") or "").strip()
+    ai_base = (os.environ.get("AI_API_URL", "") or "").strip().strip('"').strip("'")
     if not ai_base:
         return {"ok": False, "reason": "not_configured"}
     status_url = ai_base.rstrip("/") + "/status"
