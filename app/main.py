@@ -66,6 +66,7 @@ async def status():
 
 class MessagePayload(BaseModel):
     message: str
+    chatId: int | None = None
     conversation_id: int | None = None
 
 @app.post("/api/message")
@@ -83,7 +84,7 @@ async def api_message(payload: MessagePayload):
     try:
         req = urllib.request.Request(
             ask_url,
-            data=json.dumps({"message": msg, "conversation_id": payload.conversation_id}).encode("utf-8"),
+            data=json.dumps({"texto": msg}).encode("utf-8"),
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
         )
