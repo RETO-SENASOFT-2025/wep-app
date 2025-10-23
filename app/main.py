@@ -81,6 +81,9 @@ async def api_message(payload: MessagePayload):
     ask_path = (os.environ.get("AI_ASK_PATH", "/ask") or "/ask").strip()
     ask_url = ai_base.rstrip("/") + "/" + ask_path.lstrip("/")
 
+    # Allow configurable timeout to avoid premature 503 when the model is slower
+    request_timeout = float(os.environ.get("AI_REQUEST_TIMEOUT_SECONDS", "30"))
+
     try:
         payload_body = {"texto": msg, "message": msg}
         req = urllib.request.Request(
@@ -89,7 +92,7 @@ async def api_message(payload: MessagePayload):
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=request_timeout) as resp:
             status_code = getattr(resp, "status", 200)
             if status_code != 200:
                 raise HTTPException(status_code=503, detail="AI backend error")
