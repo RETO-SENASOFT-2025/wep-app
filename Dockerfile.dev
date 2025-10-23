@@ -1,57 +1,22 @@
-# ----------------------------------------------------------------------------
-# Imagen base de Python para desarrollo
-# ----------------------------------------------------------------------------
 FROM python:3.13.9-slim-bookworm
 
-# ----------------------------------------------------------------------------
-# Variables de entorno
-# ----------------------------------------------------------------------------
-# PYTHONDONTWRITEBYTECODE: evita que Python genere archivos .pyc en disco.
-# PYTHONUNBUFFERED: desactiva el buffering de stdout/stderr para ver logs
-#   inmediatamente durante el desarrollo.
-# PIP_NO_CACHE_DIR/PIP_DISABLE_PIP_VERSION_CHECK: usa opciones para pip durante
-#   la construcción de la imagen de desarrollo.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# ----------------------------------------------------------------------------
-# Directorio de trabajo
-# ----------------------------------------------------------------------------
 WORKDIR /app
 
-# ----------------------------------------------------------------------------
-# Dependencias del sistema (curl para healthcheck)
-# ----------------------------------------------------------------------------
-# Instala 'curl' para facilitar healthchecks y pruebas rápidas en desarrollo.
-# Usa '--no-install-recommends' para evitar paquetes innecesarios.
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-# ----------------------------------------------------------------------------
-# Instalar dependencias de Python
-# ----------------------------------------------------------------------------
-# Copia 'requirements.txt' primero para aprovechar la caché de Docker y evitar
-# reinstalar dependencias cada vez que cambies código.
 COPY requirements.txt ./
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# ----------------------------------------------------------------------------
-# Copiar el código (se sobreescribe con el bind mount en dev)
-# ----------------------------------------------------------------------------
-# Copia el código fuente. En desarrollo normalmente monta el código desde el
-# host (bind mount); esta copia sirve para que la imagen sea ejecutable si no
-# se usa el volumen en el contenedor.
 COPY . .
 
 EXPOSE 8000
 
-# ----------------------------------------------------------------------------
-# Comando de desarrollo con auto-reload
-# ----------------------------------------------------------------------------
-# Ejecuta Uvicorn en modo reload para desarrollo, recargando la app al
-# detectar cambios en el código.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
