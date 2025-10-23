@@ -17,28 +17,6 @@
     </div>
   </div>
 
-  <!-- Alerta de conexión WebSocket -->
-  <div id="wsConnectionAlert"
-    class="hidden rounded-lg bg-amber-50 p-4 mb-4 border border-amber-200 text-amber-800 shadow-md">
-    <div class="flex items-start gap-3">
-      <div class="bg-amber-100 text-amber-700 rounded-full p-1.5 flex-shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <div class="flex-1">
-        <div class="font-semibold">No podemos conectar con el servidor</div>
-        <p id="wsStatusText" class="text-sm">Estamos reintentando automáticamente. Puedes seguir usando la app local.
-        </p>
-        <div class="mt-2 flex gap-2">
-          <button id="wsRetryNow"
-            class="rounded-md px-3 py-1.5 text-sm bg-white hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors">Reintentar
-            ahora</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div
     class="rounded-2xl bg-white shadow-lg p-0 border border-gray-100 overflow-hidden flex flex-col h-[calc(100vh-240px)] sm:h-[calc(100vh-220px)] md:h-[calc(100vh-200px)]">
@@ -83,25 +61,4 @@
 </section>
 
 <script src="{{ request.url_for('static', path='js/messages.js') }}"></script>
-<script src="{{ request.url_for('static', path='js/websocket.js') }}"></script>
-<script>
-  // Character counter for message input
-  const messageInput = document.getElementById('messageInput');
-  const charCount = document.getElementById('charCount');
-
-  if (messageInput && charCount) {
-    messageInput.addEventListener('input', function () {
-      const currentLength = this.value.length;
-      charCount.textContent = `${currentLength}/500`;
-
-      if (currentLength >= 450) {
-        charCount.classList.add('text-red-500');
-        charCount.classList.remove('text-gray-400');
-      } else {
-        charCount.classList.remove('text-red-500');
-        charCount.classList.add('text-gray-400');
-      }
-    });
-  }
-</script>
 {% endblock %}

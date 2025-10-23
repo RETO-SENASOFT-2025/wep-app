@@ -34,9 +34,8 @@
       w.db = db; // compat
       const ready = new CustomEvent('SuperApp:onReady');
       w.dispatchEvent(ready);
-      showToast('UI lista');
-    }).catch(() => {});
-});
+    }).catch(() => { });
+  });
 
   w.showToast = showToast;
 })(window);

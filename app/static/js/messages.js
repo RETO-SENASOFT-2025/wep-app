@@ -41,6 +41,7 @@
     const input = q('messageInput');
     const sendBtn = q('sendMessage');
     const clearBtn = q('clearMessages');
+    const charCount = q('charCount');
     if (!input || !sendBtn) return;
 
     async function send() {
@@ -49,7 +50,26 @@
       if (!text || !activeId) return;
       await w.SuperAppDB.addMessage(activeId, text);
       input.value = '';
+      // Resetea contador
+      if (charCount) { charCount.textContent = `0/500`; charCount.classList.remove('text-red-500'); charCount.classList.add('text-gray-400'); }
       await refresh();
+    }
+
+    // Contador de caracteres
+    if (charCount) {
+      const updateCount = () => {
+        const len = (input.value || '').length;
+        charCount.textContent = `${len}/500`;
+        if (len >= 450) {
+          charCount.classList.add('text-red-500');
+          charCount.classList.remove('text-gray-400');
+        } else {
+          charCount.classList.remove('text-red-500');
+          charCount.classList.add('text-gray-400');
+        }
+      };
+      updateCount();
+      input.addEventListener('input', updateCount);
     }
 
     sendBtn.addEventListener('click', send);
@@ -76,3 +96,4 @@
   });
   w.SuperAppMessages = { init, refresh };
 })(window);
+
